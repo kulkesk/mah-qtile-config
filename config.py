@@ -1,5 +1,5 @@
-# Copyright (c) 2010 Aldo Cortesi
 # Copyright (c) 2010, 2014 dequis
+# Copyright (c) 2010 Aldo Cortesi
 # Copyright (c) 2012 Randall Ma
 # Copyright (c) 2012-2014 Tycho Andersen
 # Copyright (c) 2012 Craig Barnes
@@ -26,10 +26,22 @@
 
 from typing import List  # noqa: F401
 
-from libqtile import bar, layout, widget
+from libqtile import bar, layout, widget, hook
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
+
+
+@hook.subscribe.startup_once
+def autostart():
+    from pathlib import Path
+    from subprocess import Popen
+    
+    working_path = Path(__file__).absolute().parent
+    autostart_file_path = working_path / "autostart"
+    if autostart_file_path.is_file():
+        Popen(["bash", autostart_file_path])
+
 
 mod = "mod4"
 terminal = guess_terminal()
@@ -88,6 +100,7 @@ keys = [
         desc="Change keyboard layout")
 ]
 
+
 groups = [Group(i) for i in "123456789"]
 
 for i in groups:
@@ -121,6 +134,7 @@ layouts = [
     # layout.Zoomy(),
 ]
 
+
 widget_defaults = dict(
     font='sans',
     fontsize=12,
@@ -145,14 +159,15 @@ screens = [
                 # widget.TextBox(" not default", name="default"),
                 widget.KeyboardLayout(configured_keyboards=["us", "ru"],
                                       display_map={"ru":"🇷🇺", "us":"🇺🇸"},
-                                      fontsize=16),
-                widget.Systray(),
+                                      fontsize=19),
+                widget.Systray(icon_size=16),
                 # widget.Cmus()
                 # widget.TextBox("Press &lt;M-r&gt; to spawn", foreground="#d75f5f"),
-                widget.Clock(format='%Y-%m-%d %a %H:%M'),
+                widget.Clock(format='%H:%M\n<span size="x-small">%Y-%m-%d %a</span>'),
                 widget.QuickExit(),
             ],
             24,
+            # background=(["#2C2952"]*3) + ["#605AB4"]
         ),
     ),
 ]
