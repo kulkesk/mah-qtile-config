@@ -101,7 +101,7 @@ keys = [
 ]
 
 
-groups = [Group(i) for i in "123456789"]
+groups = [Group(i) for i in "12345"]
 
 for i in groups:
     keys.extend([
@@ -160,7 +160,7 @@ screens = [
                 widget.KeyboardLayout(configured_keyboards=["us", "ru"],
                                       display_map={"ru":"🇷🇺", "us":"🇺🇸"},
                                       fontsize=19),
-                widget.Systray(icon_size=16),
+                widget.Systray(),
                 # widget.Cmus()
                 # widget.TextBox("Press &lt;M-r&gt; to spawn", foreground="#d75f5f"),
                 widget.Clock(format='%H:%M\n<span size="x-small">%Y-%m-%d %a</span>'),
@@ -168,6 +168,7 @@ screens = [
             ],
             24,
             # background=(["#2C2952"]*3) + ["#605AB4"]
+            background=["#0F151A"]
         ),
     ),
 ]
