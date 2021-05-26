@@ -161,6 +161,7 @@ screens = [
                                       display_map={"ru":"🇷🇺", "us":"🇺🇸"},
                                       fontsize=19),
                 widget.Systray(),
+                widget.Volume(),
                 # widget.Cmus()
                 # widget.TextBox("Press &lt;M-r&gt; to spawn", foreground="#d75f5f"),
                 widget.Clock(format='%H:%M\n<span size="x-small">%Y-%m-%d %a</span>'),
