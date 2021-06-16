@@ -31,16 +31,17 @@ from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
+from pathlib import Path
+WORKING_PATH = Path(__file__).absolute().parent
+
 
 @hook.subscribe.startup_once
 def autostart():
-    from pathlib import Path
-    from subprocess import Popen
-    
-    working_path = Path(__file__).absolute().parent
-    autostart_file_path = working_path / "autostart"
+    # from subprocess import Popen
+
+    autostart_file_path = WORKING_PATH / "autostart"
     if autostart_file_path.is_file():
-        Popen(["bash", autostart_file_path])
+        lazy.spawn(''.join(["bash",autostart_file_path]))
 
 
 mod = "mod4"
@@ -119,7 +120,7 @@ for i in groups:
     ])
 
 layouts = [
-    layout.Columns(border_focus_stack='#d75f5f'),
+    layout.Columns(border_focus_stack='#d75f5f', margin=2),
     layout.Max(),
     # Try more layouts by unleashing below layouts.
     # layout.Stack(num_stacks=2),
@@ -169,8 +170,11 @@ screens = [
             ],
             24,
             # background=(["#2C2952"]*3) + ["#605AB4"]
-            background=["#0F151A"]
+            # background=["#2F2A2A"]
+            # background=["#191717"]
+            background=["#302929"]
         ),
+    wallpaper=WORKING_PATH / "untitled.png"
     ),
 ]
 
