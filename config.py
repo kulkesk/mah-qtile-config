@@ -162,7 +162,13 @@ screens = [
                                       display_map={"ru":"🇷🇺", "us":"🇺🇸"},
                                       fontsize=19),
                 widget.Systray(),
-                widget.Volume(),
+                widget.PulseVolume(),
+                # widget.Volume(
+                    # get_volume_command="/usr/bin/pamixer --get-volume-human",
+                    # mute_command = "/usr/bin/pamixer -t",
+                    # volume_up_command="/usr/bin/pamixer -i 2",
+                    # volume_down_command="/usr/bin/pamixer -d 2",
+                # ),
                 # widget.Cmus()
                 # widget.TextBox("Press &lt;M-r&gt; to spawn", foreground="#d75f5f"),
                 widget.Clock(format='%H:%M\n<span size="x-small">%Y-%m-%d %a</span>'),
