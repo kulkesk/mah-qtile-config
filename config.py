@@ -193,6 +193,22 @@ mouse = [
     Click([mod], "Button2", lazy.window.bring_to_front())
 ]
 
+
+# Telegram group
+
+groups.append(
+    Group("T", matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],
+         spawn="~/programs/Telegram/Telegram")
+)
+
+keys.extend([
+    Key([mod], "t", lazy.group['T'].toscreen(),
+        desc="Switch to group {}".format("T")),
+    Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True),
+        desc="Switch to & move focused window to group {}".format("T"))
+])
+
+
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 main = None  # WARNING: this is deprecated and will be removed soon
