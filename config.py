@@ -107,7 +107,7 @@ groups = [Group(i) for i in "12345"]
 for i in groups:
     keys.extend([
         # mod1 + letter of group = switch to group
-        Key([mod], i.name, lazy.group[i.name].toscreen(),
+        Key([mod], i.name, lazy.group[i.name].toscreen(toggle=False),
             desc="Switch to group {}".format(i.name)),
 
         # mod1 + shift + letter of group = switch to & move focused window to group
@@ -189,20 +189,23 @@ mouse = [
     Drag([mod], "Button1", lazy.window.set_position_floating(),
          start=lazy.window.get_position()),
     Drag([mod], "Button3", lazy.window.set_size_floating(),
-         start=lazy.window.get_size()),
-    Click([mod], "Button2", lazy.window.bring_to_front())
+        start=lazy.window.get_size()),
+    Click([mod], "Button2", lazy.window.bring_to_front()),
+    Click([mod, "shift"], "Button1", lazy.window.toggle_floating())
 ]
 
 
 # Telegram group
 
+import os
+
 groups.append(
     Group("T", matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],
-         spawn="~/programs/Telegram/Telegram")
+         spawn=os.environ.get("TELEGRAM_EXEC",'echo "oops"'))
 )
 
 keys.extend([
-    Key([mod], "t", lazy.group['T'].toscreen(),
+    Key([mod], "t", lazy.group['T'].toscreen(toggle=False),
         desc="Switch to group {}".format("T")),
     Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True),
         desc="Switch to & move focused window to group {}".format("T"))
