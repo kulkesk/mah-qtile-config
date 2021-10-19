@@ -88,6 +88,7 @@ keys = [
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
     Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
+    Key([mod], "Cyrillic_tse", lazy.window.kill(), desc="Kill focused window"), #variant for cyrillic letters 
 
     Key([mod, "control"], "r", lazy.restart(), desc="Restart Qtile"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
@@ -208,6 +209,12 @@ keys.extend([
     Key([mod], "t", lazy.group['T'].toscreen(toggle=False),
         desc="Switch to group {}".format("T")),
     Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True),
+        desc="Switch to & move focused window to group {}".format("T")),
+
+    # cyrillic variant
+    Key([mod], "Cyrillic_ie", lazy.group['T'].toscreen(toggle=False),
+        desc="Switch to group {}".format("T")),
+    Key([mod, "shift"], 'Cyrillic_ie', lazy.window.togroup("T", switch_group=True),
         desc="Switch to & move focused window to group {}".format("T"))
 ])
 
