@@ -98,7 +98,7 @@ keys = [
 
     Key([mod, "shift"], "r", lazy.spawn("rofi -show drun -modi drun"),
         desc="launch rofi"),
-    Key([], 'Print', lazy.spawn("flameshot"), desc="make screenshot"), # make configurable screenshot tool
+    Key([], 'Print', lazy.spawn("flameshot gui"), desc="make screenshot"), # make configurable screenshot tool
     Key(['shift'], "Alt_L", lazy.widget["keyboardlayout"].next_keyboard(),
         desc="Change keyboard layout")
 ]
