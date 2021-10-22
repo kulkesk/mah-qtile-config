@@ -181,7 +181,8 @@ screens = [
             # background=["#191717"]
             background=["#302929"]
         ),
-    wallpaper=WORKING_PATH / "untitled.png"
+    wallpaper=WORKING_PATH / "untitled.png",
+    wallpaper_mode="stretch"
     ),
 ]
 
