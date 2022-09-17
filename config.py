@@ -25,6 +25,8 @@
 # SOFTWARE.
 
 from typing import List  # noqa: F401
+from textwrap import shorten
+
 
 from libqtile import bar, layout, widget, hook
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
@@ -32,6 +34,7 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 
 from pathlib import Path
+import subprocess
 WORKING_PATH = Path(__file__).absolute().parent
 
 
@@ -41,7 +44,7 @@ def autostart():
 
     autostart_file_path = WORKING_PATH / "autostart"
     if autostart_file_path.is_file():
-        lazy.spawn(''.join(["bash",autostart_file_path]))
+        subprocess.Popen([autostart_file_path])
 
 
 mod = "mod4"
@@ -88,7 +91,6 @@ keys = [
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
     Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
-    Key([mod], "Cyrillic_tse", lazy.window.kill(), desc="Kill focused window"), #variant for cyrillic letters 
 
     Key([mod, "control"], "r", lazy.restart(), desc="Restart Qtile"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
@@ -98,9 +100,11 @@ keys = [
 
     Key([mod, "shift"], "r", lazy.spawn("rofi -show drun -modi drun"),
         desc="launch rofi"),
-    Key([], 'Print', lazy.spawn("flameshot gui"), desc="make screenshot"), # make configurable screenshot tool
-    Key(['shift'], "Alt_L", lazy.widget["keyboardlayout"].next_keyboard(),
-        desc="Change keyboard layout")
+    Key([], 'Print', lazy.spawn("flameshot gui"), desc="make screenshot"),
+    Key([mod,], "m", lazy.spawn('sflock -b "[o-o]" -c "#"'), desc="lock the screen"),
+    # Key(['shift'], "Alt_L", lazy.widget["keyboardlayout"].next_keyboard(),
+        # desc="Change keyboard layout")
+    Key([mod], "f", lazy.window.toggle_fullscreen(), desc="toggle fullscreen for focused window")
 ]
 
 
@@ -145,24 +149,55 @@ widget_defaults = dict(
 )
 extension_defaults = widget_defaults.copy()
 
+def tasklist_shortener(text:str):
+    chop_list = {
+        " Mozilla Firefox": "Firefox",
+        "- Chromium": "Chromium",
+        "- VSCodium": "VSCodium",
+    }
+    for identifier in chop_list.keys():
+        if identifier in text:
+            return chop_list[identifier]
+    return shorten(text, 25, placeholder="...")
+    # return text
+
 screens = [
     Screen(
         bottom=bar.Bar(
             [
-                widget.CurrentLayout(),
+                widget.CurrentLayoutIcon(scale=0.69), # noice
                 widget.GroupBox(disable_drag=True),
                 widget.Prompt(),
-                widget.WindowName(),
-                widget.Chord(
-                    chords_colors={
-                        'launch': ("#ff0000", "#ffffff"),
-                    },
-                    name_transform=lambda name: name.upper(),
+                # widget.WindowName(),
+                widget.TaskList(
+                    rounded=True,
+                    highlight_method="block",
+                    markup_normal='<span alpha="30%">{}</span>',
+                    markup_focused="{}",
+                    markup_minimized="<u>{}</u>",
+                    markup_maximized="<b>{}</b>",
+                    markup_floating="<sup>{}</sup>",
+                    txt_floating="",
+                    txt_maximized="",
+                    txt_minimized="",
+                    max_chars=3,
+                    padding_y=2,
+                    icon_size=17,
+                    parse_text=tasklist_shortener,
                 ),
+                # widget.Chord(
+                #     chords_colors={
+                #         'launch': ("#ff0000", "#ffffff"),
+                #     },
+                #     name_transform=lambda name: name.upper(),
+                # ),
                 # widget.TextBox(" not default", name="default"),
-                widget.KeyboardLayout(configured_keyboards=["us", "ru"],
-                                      display_map={"ru":"🇷🇺", "us":"🇺🇸"},
-                                      fontsize=19),
+                # widget.KeyboardLayout(
+                                      # display_map={"ru,us":"🇷🇺", "us,ru":"🇺🇸"},
+                                      # fontsize=19,
+                                      # update_interval=0.3
+                                      # ),
+                widget.Mpris2(),
                 widget.Systray(),
                 widget.PulseVolume(),
                 # widget.Volume(
@@ -173,7 +208,11 @@ screens = [
                 # ),
                 # widget.Cmus()
                 # widget.TextBox("Press &lt;M-r&gt; to spawn", foreground="#d75f5f"),
-                widget.Clock(format='%H:%M\n<span size="x-small">%Y-%m-%d %a</span>'),
+                widget.Clock(
+                    format='%H:%M\n<span size="x-small">%d-%m-%Y %a</span>',
+                    # fontsize=12
+                    padding=6,
+                    ),
                 widget.QuickExit(),
             ],
             24,
@@ -182,7 +221,7 @@ screens = [
             # background=["#191717"]
             background=["#302929"]
         ),
-    wallpaper=WORKING_PATH / "untitled.png",
+    wallpaper=str(WORKING_PATH / "untitled.png"),
     wallpaper_mode="stretch"
     ),
 ]
@@ -212,12 +251,6 @@ keys.extend([
         desc="Switch to group {}".format("T")),
     Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True),
         desc="Switch to & move focused window to group {}".format("T")),
-
-    # cyrillic variant
-    Key([mod], "Cyrillic_ie", lazy.group['T'].toscreen(toggle=False),
-        desc="Switch to group {}".format("T")),
-    Key([mod, "shift"], 'Cyrillic_ie', lazy.window.togroup("T", switch_group=True),
-        desc="Switch to & move focused window to group {}".format("T"))
 ])
 
 
@@ -249,3 +282,5 @@ focus_on_window_activation = "smart"
 # We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
 # java that happens to be on java's whitelist.
 wmname = "LG3D"
+
+# wmname = "Qtile"
