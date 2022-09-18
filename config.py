@@ -24,18 +24,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import List  # noqa: F401
+import subprocess
+from pathlib import Path
+import sys
 from textwrap import shorten
+from typing import List  # noqa: F401
 
-
-from libqtile import bar, layout, widget, hook
+from libqtile.command.client import InteractiveCommandClient
+from libqtile import bar, hook, layout, qtile, widget
+from libqtile.backend import base
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
+from libqtile.core.manager import Qtile
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
+from libqtile.log_utils import logger
 
-from pathlib import Path
-import subprocess
-WORKING_PATH = Path(__file__).absolute().parent
+WORKING_PATH = Path(__file__).expanduser().absolute().parent
+
+list_always_in_sight = [
+    {
+        "name": "Picture-in-Picture",
+        "wm_class": ["Toolkit", "firefox"]
+    }
+]
 
 
 @hook.subscribe.startup_once
@@ -45,6 +56,31 @@ def autostart():
     autostart_file_path = WORKING_PATH / "autostart"
     if autostart_file_path.is_file():
         subprocess.Popen([autostart_file_path])
+        
+
+@hook.subscribe.focus_change
+def windows_always_in_sight():
+    if qtile is None:
+        return
+    _qtile: Qtile = qtile
+    current_group = _qtile.current_group
+    floating_windows_out_of_place = list([ w for w in _qtile.cmd_windows() if w.get("floating", False) and w.get("group") != current_group.name])
+    for window in floating_windows_out_of_place:
+        name = window.get("name")
+        wm_class:list[str] = window.get("wm_class")
+        w_id = window.get('id')
+        if name in [w["name"] for w in list_always_in_sight]:
+            if wm_class == [w["wm_class"] for w in list_always_in_sight if w["name"] == name]:
+                _qtile.windows_map[w_id].togroup(current_group.name)
+
+@hook.subscribe.focus_change
+def float_always_on_top():
+    if qtile is None:
+        return
+    _qtile: Qtile = qtile
+    for window in _qtile.current_group.windows:
+        if window.floating:
+            window.cmd_bring_to_front()
 
 
 mod = "mod4"
@@ -134,8 +170,8 @@ layouts = [
     # layout.Matrix(),
     # layout.MonadTall(),
     # layout.MonadWide(),
-    # layout.RatioTile(),
-    # layout.Tile(),
+    # layout.RatioTile(margin=0),
+    layout.Tile(),
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
@@ -185,40 +221,15 @@ screens = [
                     icon_size=17,
                     parse_text=tasklist_shortener,
                 ),
-                # widget.Chord(
-                #     chords_colors={
-                #         'launch': ("#ff0000", "#ffffff"),
-                #     },
-                #     name_transform=lambda name: name.upper(),
-                # ),
-                # widget.TextBox(" not default", name="default"),
-                # widget.KeyboardLayout(
-                                      # display_map={"ru,us":"🇷🇺", "us,ru":"🇺🇸"},
-                                      # fontsize=19,
-                                      # update_interval=0.3
-                                      # ),
                 widget.Mpris2(),
                 widget.Systray(),
                 widget.PulseVolume(),
-                # widget.Volume(
-                    # get_volume_command="/usr/bin/pamixer --get-volume-human",
-                    # mute_command = "/usr/bin/pamixer -t",
-                    # volume_up_command="/usr/bin/pamixer -i 2",
-                    # volume_down_command="/usr/bin/pamixer -d 2",
-                # ),
-                # widget.Cmus()
-                # widget.TextBox("Press &lt;M-r&gt; to spawn", foreground="#d75f5f"),
                 widget.Clock(
                     format='%H:%M\n<span size="x-small">%d-%m-%Y %a</span>',
-                    # fontsize=12
-                    padding=6,
                     ),
                 widget.QuickExit(),
             ],
             24,
-            # background=(["#2C2952"]*3) + ["#605AB4"]
-            # background=["#2F2A2A"]
-            # background=["#191717"]
             background=["#302929"]
         ),
     wallpaper=str(WORKING_PATH / "untitled.png"),
