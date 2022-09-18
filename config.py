@@ -70,7 +70,7 @@ def windows_always_in_sight():
         wm_class:list[str] = window.get("wm_class")
         w_id = window.get('id')
         if name in [w["name"] for w in list_always_in_sight]:
-            if wm_class == [w["wm_class"] for w in list_always_in_sight if w["name"] == name]:
+            if wm_class in [w["wm_class"] for w in list_always_in_sight if w["name"] == name]:
                 _qtile.windows_map[w_id].togroup(current_group.name)
 
 @hook.subscribe.focus_change
