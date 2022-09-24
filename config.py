@@ -24,6 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import subprocess
 from pathlib import Path
 import sys
@@ -38,25 +39,49 @@ from libqtile.core.manager import Qtile
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 from libqtile.log_utils import logger
+from libqtile.backend.base import Window
 
 WORKING_PATH = Path(__file__).expanduser().absolute().parent
 
 list_always_in_sight = [
     {
         "name": "Picture-in-Picture",
-        "wm_class": ["Toolkit", "firefox"]
+        "wm_class": ["Toolkit", "firefox"],
+        "set_opacity": 0.85
     }
 ]
+
+
+@lazy.function
+def bar_toggle_visibility(qtile:Qtile):
+    qtile.cmd_hide_show_bar()
+    qtile.cmd_reconfigure_screens() #hack so bar would look somewhat correctly
+    # qtile.cmd_next_layout()
+    # qtile.cmd_prev_layout()
+
+
+def is_window_in_list(window:dict):
+    name = window.get("name")
+    wm_class:list[str] = window.get("wm_class") #type: ignore
+    w_id = window.get('id')
+    def _filter(_dict: dict):
+        comp_name = _dict.get("name", "")
+        comp_class = _dict.get("wm_class", [])
+        return name == comp_name and wm_class == comp_class
+    return list(filter(_filter, list_always_in_sight))
 
 
 @hook.subscribe.startup_once
 def autostart():
     # from subprocess import Popen
 
+    output = Path("/dev/null")
     autostart_file_path = WORKING_PATH / "autostart"
     if autostart_file_path.is_file():
-        subprocess.Popen([autostart_file_path])
-        
+        with output.open("w") as output:
+            subprocess.Popen([autostart_file_path], stdout=output, stderr=output)
+
+
 
 @hook.subscribe.focus_change
 def windows_always_in_sight():
@@ -66,21 +91,26 @@ def windows_always_in_sight():
     current_group = _qtile.current_group
     floating_windows_out_of_place = list([ w for w in _qtile.cmd_windows() if w.get("floating", False) and w.get("group") != current_group.name])
     for window in floating_windows_out_of_place:
-        name = window.get("name")
-        wm_class:list[str] = window.get("wm_class")
         w_id = window.get('id')
-        if name in [w["name"] for w in list_always_in_sight]:
-            if wm_class in [w["wm_class"] for w in list_always_in_sight if w["name"] == name]:
-                _qtile.windows_map[w_id].togroup(current_group.name)
+        if match := is_window_in_list(window):
+            _qtile.windows_map[w_id].togroup(current_group.name)
+            if opacity:=match[0].get("set_opacity"):
+                _qtile.windows_map[w_id].cmd_opacity(opacity)
+
 
 @hook.subscribe.focus_change
-def float_always_on_top():
+def float_always_on_top(_window:Window=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
     for window in _qtile.current_group.windows:
+        window:Window = window #type: ignore
         if window.floating:
             window.cmd_bring_to_front()
+            if window.opacity == 1.0 and not window.fullscreen:
+                window.cmd_opacity(float_opacity)
+            if window.fullscreen:
+                window.cmd_opacity(1)
 
 
 mod = "mod4"
@@ -138,9 +168,13 @@ keys = [
         desc="launch rofi"),
     Key([], 'Print', lazy.spawn("flameshot gui"), desc="make screenshot"),
     Key([mod,], "m", lazy.spawn('sflock -b "[o-o]" -c "#"'), desc="lock the screen"),
-    # Key(['shift'], "Alt_L", lazy.widget["keyboardlayout"].next_keyboard(),
-        # desc="Change keyboard layout")
-    Key([mod], "f", lazy.window.toggle_fullscreen(), desc="toggle fullscreen for focused window")
+    
+    Key([mod, "shift"], "f", lazy.window.toggle_fullscreen(), desc="toggle fullscreen for focused window"),
+    Key([mod], "f", bar_toggle_visibility(), desc="toggle bar's visibility"),
+    
+    Key([mod], "s", lazy.widget["mpris2"].play_pause(), desc="play/pause media"),
+    Key([mod], "d", lazy.widget["mpris2"].next(), desc="next media"),
+    Key([mod], "a", lazy.widget["mpris2"].previous(), desc="previous media"),
 ]
 
 
@@ -179,6 +213,7 @@ layouts = [
 
 
 widget_defaults = dict(
+    background="#302929",
     font='sans',
     fontsize=12,
     padding=3,
@@ -194,8 +229,13 @@ def tasklist_shortener(text:str):
     for identifier in chop_list.keys():
         if identifier in text:
             return chop_list[identifier]
-    return shorten(text, 25, placeholder="...")
+    return shorten(text, 30, placeholder="...")
     # return text
+
+def current_keyboard_layout():
+    layouts = {"ru":"🇷🇺", "us":"🇺🇸"}
+    p = subprocess.Popen(['xkblayout-state', 'print', '%s'], text=True, stdout=subprocess.PIPE)
+    return layouts.get(p.communicate()[0], "unknown layout")
 
 screens = [
     Screen(
@@ -205,32 +245,46 @@ screens = [
                 widget.GroupBox(disable_drag=True),
                 widget.Prompt(),
                 # widget.WindowName(),
-                widget.TaskList(
-                    rounded=True,
-                    highlight_method="block",
-                    markup_normal='<span alpha="30%">{}</span>',
-                    markup_focused="{}",
-                    markup_minimized="<u>{}</u>",
-                    markup_maximized="<b>{}</b>",
-                    markup_floating="<sup>{}</sup>",
-                    txt_floating="",
-                    txt_maximized="",
-                    txt_minimized="",
-                    max_chars=3,
-                    padding_y=2,
-                    icon_size=17,
-                    parse_text=tasklist_shortener,
+                # widget.TaskList(
+                #     rounded=True,
+                #     highlight_method="block",
+                #     markup_normal='<span alpha="30%">{}</span>',
+                #     markup_focused="{}",
+                #     markup_minimized="<u>{}</u>",
+                #     markup_maximized="<b>{}</b>",
+                #     markup_floating="<i>{}</i>",
+                #     txt_floating="",
+                #     txt_maximized="",
+                #     txt_minimized="",
+                #     max_chars=3,
+                #     padding_y=2,
+                #     icon_size=17,
+                #     parse_text=tasklist_shortener,
+                # ),
+                widget.Mpris2(
+                    display_metadata=['xesam:artist', 'xesam:title', 'xesam:album'],
+                    paused_text="⏸ | {track} |",
+                    playing_text="▸ | {track} |",
+                    scroll_chars=10,
                 ),
-                widget.Mpris2(),
+                widget.Spacer(),
+                widget.CPU(),
+                widget.MemoryGraph(border_width=1),
                 widget.Systray(),
+                widget.GenPollText(
+                    func=current_keyboard_layout,
+                    fontsize=20,
+                    update_interval=0.5
+                ),
                 widget.PulseVolume(),
                 widget.Clock(
                     format='%H:%M\n<span size="x-small">%d-%m-%Y %a</span>',
                     ),
                 widget.QuickExit(),
             ],
-            24,
-            background=["#302929"]
+            27,
+            background=["#302929"],
+            opacity=0.9
         ),
     wallpaper=str(WORKING_PATH / "untitled.png"),
     wallpaper_mode="stretch"
@@ -264,10 +318,9 @@ keys.extend([
         desc="Switch to & move focused window to group {}".format("T")),
 ])
 
-
+float_opacity = 0.9
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
-main = None  # WARNING: this is deprecated and will be removed soon
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
@@ -283,6 +336,11 @@ floating_layout = layout.Floating(float_rules=[
 ])
 auto_fullscreen = True
 focus_on_window_activation = "smart"
+reconfigure_screens = True
+
+# If things like steam games want to auto-minimize themselves when losing
+# focus, should we respect this or not?
+auto_minimize = False
 
 # XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
 # string besides java UI toolkits; you can see several discussions on the
