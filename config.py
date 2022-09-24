@@ -269,7 +269,9 @@ screens = [
                 ),
                 widget.Spacer(),
                 widget.CPU(),
-                widget.MemoryGraph(border_width=1),
+                widget.Memory(
+                    format="Memory: {MemPercent:.2f}%"
+                ),
                 widget.Systray(),
                 widget.GenPollText(
                     func=current_keyboard_layout,
