@@ -265,12 +265,15 @@ screens = [
                     display_metadata=['xesam:artist', 'xesam:title', 'xesam:album'],
                     paused_text="⏸ | {track} |",
                     playing_text="▸ | {track} |",
-                    scroll_chars=10,
+                    max_chars=60,
+                    scroll_chars=50,
                 ),
                 widget.Spacer(),
-                widget.CPU(),
+                widget.CPU(
+                    format='CPU {freq_current:<2.1f}GHz {load_percent:3.1f}%'
+                ),
                 widget.Memory(
-                    format="Memory: {MemPercent:.2f}%"
+                    format="Memory: {MemPercent:<3.1f}%"
                 ),
                 widget.Systray(),
                 widget.GenPollText(
