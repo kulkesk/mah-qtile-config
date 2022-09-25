@@ -172,9 +172,20 @@ keys = [
     Key([mod, "shift"], "f", lazy.window.toggle_fullscreen(), desc="toggle fullscreen for focused window"),
     Key([mod], "f", bar_toggle_visibility(), desc="toggle bar's visibility"),
     
+    # media control
     Key([mod], "s", lazy.widget["mpris2"].play_pause(), desc="play/pause media"),
     Key([mod], "d", lazy.widget["mpris2"].next(), desc="next media"),
     Key([mod], "a", lazy.widget["mpris2"].previous(), desc="previous media"),
+    
+    # volume control
+    Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(), desc="increase volume"),
+    Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(), desc="decrease volume"),
+    Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(1), desc="increase volume by one"),
+    Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(1), desc="decrease volume by one"),
+    Key([mod, "shift"], "q", lazy.widget["pulsevolume"].mute(), desc="mute"),
+    
+    
+    
 ]
 
 
@@ -265,15 +276,16 @@ screens = [
                     display_metadata=['xesam:artist', 'xesam:title', 'xesam:album'],
                     paused_text="⏸ | {track} |",
                     playing_text="▸ | {track} |",
+                    # scroll=True,
                     max_chars=60,
                     scroll_chars=50,
                 ),
                 widget.Spacer(),
                 widget.CPU(
-                    format='CPU {freq_current:<2.1f}GHz {load_percent:3.1f}%'
+                    format='CPU {freq_current:>03.1f}GHz {load_percent:>05.1f}%'
                 ),
                 widget.Memory(
-                    format="Memory: {MemPercent:<3.1f}%"
+                    format="Memory: {MemPercent:>05.1f}%"
                 ),
                 widget.Systray(),
                 widget.GenPollText(
