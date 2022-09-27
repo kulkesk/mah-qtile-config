@@ -47,7 +47,7 @@ list_always_in_sight = [
     {
         "name": "Picture-in-Picture",
         "wm_class": ["Toolkit", "firefox"],
-        "set_opacity": 0.85
+        "set_opacity": 1,
     }
 ]
 
@@ -94,6 +94,7 @@ def windows_always_in_sight():
         w_id = window.get('id')
         if match := is_window_in_list(window):
             _qtile.windows_map[w_id].togroup(current_group.name)
+            current_group.cmd_prev_window()
             if opacity:=match[0].get("set_opacity"):
                 _qtile.windows_map[w_id].cmd_opacity(opacity)
 
@@ -206,8 +207,14 @@ for i in groups:
         #     desc="move focused window to group {}".format(i.name)),
     ])
 
+
+default_for_layouts={
+    "margin": 0,
+    "border_width":0,
+}
+
 layouts = [
-    layout.Columns(border_focus_stack='#d75f5f', margin=2),
+    layout.Columns(border_focus_stack='#d75f5f', **default_for_layouts),
     layout.Max(),
     # Try more layouts by unleashing below layouts.
     # layout.Stack(num_stacks=2),
@@ -216,7 +223,7 @@ layouts = [
     # layout.MonadTall(),
     # layout.MonadWide(),
     # layout.RatioTile(margin=0),
-    layout.Tile(),
+    layout.Tile(**default_for_layouts),
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
@@ -282,10 +289,10 @@ screens = [
                 ),
                 widget.Spacer(),
                 widget.CPU(
-                    format='CPU {freq_current:>03.1f}GHz {load_percent:>05.1f}%'
+                    format='CPU {freq_current:>03.1f}GHz {load_percent:>04.1f}%'
                 ),
                 widget.Memory(
-                    format="Memory: {MemPercent:>05.1f}%"
+                    format="Memory: {MemPercent:>04.1f}%"
                 ),
                 widget.Systray(),
                 widget.GenPollText(
@@ -335,7 +342,7 @@ keys.extend([
         desc="Switch to & move focused window to group {}".format("T")),
 ])
 
-float_opacity = 0.9
+float_opacity = 1.0
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 follow_mouse_focus = True
