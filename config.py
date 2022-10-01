@@ -282,7 +282,7 @@ screens = [
                 widget.Mpris2(
                     display_metadata=['xesam:artist', 'xesam:title', 'xesam:album'],
                     paused_text="⏸ | {track} |",
-                    playing_text="▸ | {track} |",
+                    playing_text="    | {track} |",
                     # scroll=True,
                     max_chars=60,
                     scroll_chars=50,
