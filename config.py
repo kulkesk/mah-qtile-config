@@ -54,7 +54,7 @@ list_always_in_sight = [
 
 @lazy.function
 def bar_toggle_visibility(qtile:Qtile):
-    qtile.cmd_hide_show_bar()
+    qtile.cmd_hide_show_bar("bottom")
     qtile.cmd_reconfigure_screens() #hack so bar would look somewhat correctly
     # qtile.cmd_next_layout()
     # qtile.cmd_prev_layout()
@@ -106,12 +106,19 @@ def float_always_on_top(_window:Window=None):
     _qtile: Qtile = qtile
     for window in _qtile.current_group.windows:
         window:Window = window #type: ignore
+        focus_history: list[Window] = _qtile.current_group.focus_history
+        if focus_history[-2].floating: # fix for continuesly switching windows
+            return
         if window.floating:
             window.cmd_bring_to_front()
-            if window.opacity == 1.0 and not window.fullscreen:
-                window.cmd_opacity(float_opacity)
-            if window.fullscreen:
-                window.cmd_opacity(1)
+
+
+@hook.subscribe.client_new
+# @hook.subscribe.client_focus
+def set_windows_static(c:Window):
+    if c.name == "Desktop — Plasma":
+        c.cmd_static(None,0,0,1366,768)
+        c.borderwidth=0
 
 
 mod = "mod4"
@@ -294,7 +301,7 @@ screens = [
                 widget.Memory(
                     format="Memory: {MemPercent:>04.1f}%"
                 ),
-                widget.Systray(),
+                # widget.Systray(),
                 widget.GenPollText(
                     func=current_keyboard_layout,
                     fontsize=20,
@@ -331,7 +338,7 @@ mouse = [
 import os
 
 groups.append(
-    Group("T", matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],
+    Group("T", matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],  # type: ignore
          spawn=os.environ.get("TELEGRAM_EXEC",'echo "oops"'))
 )
 
@@ -342,7 +349,6 @@ keys.extend([
         desc="Switch to & move focused window to group {}".format("T")),
 ])
 
-float_opacity = 1.0
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 follow_mouse_focus = True
