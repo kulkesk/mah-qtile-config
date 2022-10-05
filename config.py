@@ -63,10 +63,6 @@ def bar_toggle_visibility(qtile:Qtile):
             qtile.cmd_hide_show_bar("bottom")
         case 1:
             qtile.cmd_hide_show_bar("top")
-        # case 2:
-        #     qtile.cmd_hide_show_bar("bottom")
-        # case 3:
-        #     qtile.cmd_hide_show_bar()
     
     bar_state = (bar_state + 1) % 2
     
