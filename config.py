@@ -41,6 +41,8 @@ from libqtile.utils import guess_terminal
 from libqtile.log_utils import logger
 from libqtile.backend.base import Window
 
+from hideble_bar import HidebleGap
+
 WORKING_PATH = Path(__file__).expanduser().absolute().parent
 
 list_always_in_sight = [
@@ -51,13 +53,23 @@ list_always_in_sight = [
     }
 ]
 
+bar_state = 0
 
 @lazy.function
 def bar_toggle_visibility(qtile:Qtile):
-    qtile.cmd_hide_show_bar("bottom")
-    qtile.cmd_reconfigure_screens() #hack so bar would look somewhat correctly
-    # qtile.cmd_next_layout()
-    # qtile.cmd_prev_layout()
+    global bar_state
+    match bar_state:
+        case 0:
+            qtile.cmd_hide_show_bar("bottom")
+        case 1:
+            qtile.cmd_hide_show_bar("top")
+        # case 2:
+        #     qtile.cmd_hide_show_bar("bottom")
+        # case 3:
+        #     qtile.cmd_hide_show_bar()
+    
+    bar_state = (bar_state + 1) % 2
+    
 
 
 def is_window_in_list(window:dict):
@@ -104,11 +116,14 @@ def float_always_on_top(_window:Window=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
-    for window in _qtile.current_group.windows:
-        window:Window = window #type: ignore
-        focus_history: list[Window] = _qtile.current_group.focus_history
+    focus_history: list[Window] = _qtile.current_group.focus_history
+    try:
         if focus_history[-2].floating: # fix for continuesly switching windows
             return
+    except IndexError:
+        pass
+    for window in _qtile.current_group.windows:
+        window:Window = window #type: ignore
         if window.floating:
             window.cmd_bring_to_front()
 
@@ -264,6 +279,7 @@ def current_keyboard_layout():
 
 screens = [
     Screen(
+        top=HidebleGap(22),
         bottom=bar.Bar(
             [
                 widget.CurrentLayoutIcon(scale=0.69), # noice
