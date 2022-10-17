@@ -29,7 +29,7 @@ import subprocess
 from pathlib import Path
 import sys
 from textwrap import shorten
-from typing import List  # noqa: F401
+from typing import List, Optional  # noqa: F401
 
 from libqtile.command.client import InteractiveCommandClient
 from libqtile import bar, hook, layout, qtile, widget
@@ -50,6 +50,11 @@ list_always_in_sight = [
         "name": "Picture-in-Picture",
         "wm_class": ["Toolkit", "firefox"],
         "set_opacity": 1,
+    },
+    {
+        "name": "PureRef",
+        "wm_class": ["PureRef", "PureRef"],
+        "set_opacity": 1,
     }
 ]
 
@@ -67,15 +72,21 @@ def bar_toggle_visibility(qtile:Qtile):
     bar_state = (bar_state + 1) % 2
     
 
+def is_window_in_list(window:Optional[dict|Window]):
+    if window is None:
+        return
+    if isinstance(window,dict):
+        name = window.get("name")
+        wm_class = window.get("wm_class") #type: ignore
+    else:
+        name = window.name
+        wm_class = window.get_wm_class()
 
-def is_window_in_list(window:dict):
-    name = window.get("name")
-    wm_class:list[str] = window.get("wm_class") #type: ignore
-    w_id = window.get('id')
     def _filter(_dict: dict):
         comp_name = _dict.get("name", "")
         comp_class = _dict.get("wm_class", [])
-        return name == comp_name and wm_class == comp_class
+        return name == comp_name or wm_class == comp_class
+
     return list(filter(_filter, list_always_in_sight))
 
 
@@ -92,32 +103,36 @@ def autostart():
 
 
 @hook.subscribe.focus_change
-def windows_always_in_sight():
+@hook.subscribe.client_new
+def windows_always_in_sight(win:Window=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
     current_group = _qtile.current_group
     floating_windows_out_of_place = list([ w for w in _qtile.cmd_windows() if w.get("floating", False) and w.get("group") != current_group.name])
     for window in floating_windows_out_of_place:
-        w_id = window.get('id')
+        w_id = window['id']
         if match := is_window_in_list(window):
-            _qtile.windows_map[w_id].togroup(current_group.name)
+            window_obj:Window = _qtile.windows_map[w_id] # type: ignore
+            window_obj.togroup(current_group.name)
             current_group.cmd_prev_window()
+            if not window_obj.floating:
+                window_obj.floating = True
             if opacity:=match[0].get("set_opacity"):
-                _qtile.windows_map[w_id].cmd_opacity(opacity)
+                window_obj.cmd_opacity(opacity)
 
 
+@hook.subscribe.client_new
 @hook.subscribe.focus_change
 def float_always_on_top(_window:Window=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
     focus_history: list[Window] = _qtile.current_group.focus_history
-    try:
-        if focus_history[-2].floating: # fix for continuesly switching windows
-            return
-    except IndexError:
-        pass
+    if len(focus_history) <= 1:
+        return
+    if focus_history[-2].floating and focus_history[-1].floating: # fix for continuesly switching floating windows
+        return
     for window in _qtile.current_group.windows:
         window:Window = window #type: ignore
         if window.floating:
@@ -129,11 +144,11 @@ def float_always_on_top(_window:Window=None):
 def set_windows_static(c:Window):
     if c.name == "Desktop — Plasma":
         c.cmd_static(None,0,0,1366,768)
-        c.borderwidth=0
+    c.borderwidth=0
 
 
 mod = "mod4"
-terminal = guess_terminal()
+terminal = guess_terminal("alacritty")
 
 keys = [
     # Switch between windows
@@ -197,14 +212,11 @@ keys = [
     Key([mod], "a", lazy.widget["mpris2"].previous(), desc="previous media"),
     
     # volume control
-    Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(), desc="increase volume"),
-    Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(), desc="decrease volume"),
+    Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(5), desc="increase volume"),
+    Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(5), desc="decrease volume"),
     Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(1), desc="increase volume by one"),
     Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(1), desc="decrease volume by one"),
     Key([mod, "shift"], "q", lazy.widget["pulsevolume"].mute(), desc="mute"),
-    
-    
-    
 ]
 
 
@@ -249,7 +261,7 @@ layouts = [
 
 
 widget_defaults = dict(
-    background="#302929",
+    background="#181825",
     font='sans',
     fontsize=12,
     padding=3,
@@ -326,8 +338,8 @@ screens = [
                 widget.QuickExit(),
             ],
             27,
-            background=["#302929"],
-            opacity=0.9
+            background=["#18182530"],
+            opacity=1
         ),
     wallpaper=str(WORKING_PATH / "untitled.png"),
     wallpaper_mode="stretch"
@@ -365,17 +377,21 @@ dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 follow_mouse_focus = True
 bring_front_click = False
-cursor_warp = False
+cursor_warp = False # _KDE_NET_WM_WINDOW_TYPE_APPLET_POPUP
 floating_layout = layout.Floating(float_rules=[
     # Run the utility of `xprop` to see the wm class and name of an X client.
     *layout.Floating.default_float_rules,
     Match(wm_class='confirmreset'),  # gitk
     Match(wm_class='makebranch'),  # gitk
-    Match(wm_class='maketag'),  # gitk
+    Match(wm_class='maketag'),  # gitk 
     Match(wm_class='ssh-askpass'),  # ssh-askpass
+    Match(wm_class='ibus-ui-emojier-plasma'),  # emoji selector
     Match(title='branchdialog'),  # gitk
     Match(title='pinentry'),  # GPG key password entry
-])
+    Match(wm_class="PureRef"),  # PureRef
+    Match(wm_class="plasmashell"),  # PureRef
+    # _NET_WM_WINDOW_TYPE(ATOM) = _KDE_NET_WM_WINDOW_TYPE_APPLET_POPUP
+], **default_for_layouts)
 auto_fullscreen = True
 focus_on_window_activation = "smart"
 reconfigure_screens = True
