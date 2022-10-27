@@ -27,7 +27,7 @@
 
 import subprocess
 from pathlib import Path
-import sys
+import os
 from textwrap import shorten
 from typing import List, Optional  # noqa: F401
 
@@ -90,6 +90,12 @@ def is_window_in_list(window:Optional[dict|Window]):
     return list(filter(_filter, list_always_in_sight))
 
 
+@hook.subscribe.startup
+def dump_PID_into_a_file():
+    with (WORKING_PATH / "pid").open("w") as file:
+        file.write(str(os.getpid()))
+
+
 @hook.subscribe.startup_once
 def autostart():
     # from subprocess import Popen
@@ -144,7 +150,11 @@ def float_always_on_top(_window:Window=None):
 def set_windows_static(c:Window):
     if c.name == "Desktop — Plasma":
         c.cmd_static(None,0,0,1366,768)
-    c.borderwidth=0
+    win_type = c.get_wm_type()
+    if win_type is not None:
+        if "_NET_WM_WINDOW_TYPE_DOCK," in win_type.split():
+            c.cmd_static()
+    # c.borderwidth=0
 
 
 mod = "mod4"
@@ -212,11 +222,11 @@ keys = [
     Key([mod], "a", lazy.widget["mpris2"].previous(), desc="previous media"),
     
     # volume control
-    Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(5), desc="increase volume"),
-    Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(5), desc="decrease volume"),
-    Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(1), desc="increase volume by one"),
-    Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(1), desc="decrease volume by one"),
-    Key([mod, "shift"], "q", lazy.widget["pulsevolume"].mute(), desc="mute"),
+    # Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(5), desc="increase volume"),
+    # Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(5), desc="decrease volume"),
+    # Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(1), desc="increase volume by one"),
+    # Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(1), desc="decrease volume by one"),
+    # Key([mod, "shift"], "q", lazy.widget["pulsevolume"].mute(), desc="mute"),
 ]
 
 
@@ -238,10 +248,12 @@ for i in groups:
     ])
 
 
-default_for_layouts={
-    "margin": 0,
-    "border_width":0,
-}
+default_for_layouts=dict(
+    margin = 0,
+    border_width = 2.42,
+    border_normal = "#89b4fa",
+    border_focus = "#89dceb",
+)
 
 layouts = [
     layout.Columns(border_focus_stack='#d75f5f', **default_for_layouts),
@@ -253,7 +265,10 @@ layouts = [
     # layout.MonadTall(),
     # layout.MonadWide(),
     # layout.RatioTile(margin=0),
-    layout.Tile(**default_for_layouts),
+    layout.Tile(
+        add_on_top=False,
+        **default_for_layouts
+    ),
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
@@ -311,12 +326,13 @@ screens = [
                 #     parse_text=tasklist_shortener,
                 # ),
                 widget.Mpris2(
+                    width=600,
                     display_metadata=['xesam:artist', 'xesam:title', 'xesam:album'],
                     paused_text="⏸ | {track} |",
                     playing_text="    | {track} |",
-                    # scroll=True,
-                    max_chars=60,
-                    scroll_chars=50,
+                    scroll=True,
+                    # max_chars=60,
+                    scroll_chars=5,
                 ),
                 widget.Spacer(),
                 widget.CPU(
