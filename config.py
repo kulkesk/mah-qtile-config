@@ -149,11 +149,19 @@ def float_always_on_top(_window:Window=None):
 # @hook.subscribe.client_focus
 def set_windows_static(c:Window):
     if c.name == "Desktop — Plasma":
+        qtile = c.qtile
+        
+        other_windows = [window for window in qtile.windows_map.values() if window.name != "Desktop — Plasma" and hasattr(window, "cmd_bring_to_front")]
+        for window in other_windows:
+            window.cmd_bring_to_front() # type: ignore
         c.cmd_static(None,0,0,1366,768)
     win_type = c.get_wm_type()
     if win_type is not None:
         if "_NET_WM_WINDOW_TYPE_DOCK," in win_type.split():
             c.cmd_static()
+    if wmclass := c.get_wm_class():
+        if "plasmashell" in wmclass:
+            c.borderwidth = 0
     # c.borderwidth=0
 
 
@@ -250,7 +258,7 @@ for i in groups:
 
 default_for_layouts=dict(
     margin = 0,
-    border_width = 2.42,
+    border_width = 2,
     border_normal = "#89b4fa",
     border_focus = "#89dceb",
 )
@@ -267,6 +275,7 @@ layouts = [
     # layout.RatioTile(margin=0),
     layout.Tile(
         add_on_top=False,
+        border_on_single=False,
         **default_for_layouts
     ),
     # layout.TreeTab(),
@@ -341,7 +350,7 @@ screens = [
                 widget.Memory(
                     format="Memory: {MemPercent:>04.1f}%"
                 ),
-                # widget.Systray(),
+                # widget.Systray(),
                 widget.GenPollText(
                     func=current_keyboard_layout,
                     fontsize=20,
