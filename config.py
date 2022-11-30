@@ -110,7 +110,7 @@ def autostart():
 
 @hook.subscribe.focus_change
 @hook.subscribe.client_new
-def windows_always_in_sight(win:Window=None):
+def windows_always_in_sight(win:Window|None=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
@@ -130,7 +130,7 @@ def windows_always_in_sight(win:Window=None):
 
 @hook.subscribe.client_new
 @hook.subscribe.focus_change
-def float_always_on_top(_window:Window=None):
+def float_always_on_top(_window:Window|None=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
@@ -230,10 +230,10 @@ keys = [
     Key([mod], "a", lazy.widget["mpris2"].previous(), desc="previous media"),
     
     # volume control
-    # Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(5), desc="increase volume"),
-    # Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(5), desc="decrease volume"),
-    # Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(1), desc="increase volume by one"),
-    # Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(1), desc="decrease volume by one"),
+    Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(5), desc="increase volume"),
+    Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(5), desc="decrease volume"),
+    Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(1), desc="increase volume by one"),
+    Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(1), desc="decrease volume by one"),
     # Key([mod, "shift"], "q", lazy.widget["pulsevolume"].mute(), desc="mute"),
 ]
 
@@ -311,7 +311,7 @@ def current_keyboard_layout():
 
 screens = [
     Screen(
-        top=HidebleGap(22),
+        top=HidebleGap(24),
         bottom=bar.Bar(
             [
                 widget.CurrentLayoutIcon(scale=0.69), # noice
@@ -350,7 +350,7 @@ screens = [
                 widget.Memory(
                     format="Memory: {MemPercent:>04.1f}%"
                 ),
-                # widget.Systray(),
+                # widget.Systray(),
                 widget.GenPollText(
                     func=current_keyboard_layout,
                     fontsize=20,

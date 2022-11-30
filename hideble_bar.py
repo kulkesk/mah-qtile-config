@@ -1,4 +1,3 @@
-from telnetlib import GA
 from libqtile.bar import Gap
 
 class HidebleGap(Gap):
