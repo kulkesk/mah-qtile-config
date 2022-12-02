@@ -29,7 +29,7 @@ import subprocess
 from pathlib import Path
 import os
 from textwrap import shorten
-from typing import List, Optional  # noqa: F401
+from typing import List, Optional, Callable
 
 from libqtile.command.client import InteractiveCommandClient
 from libqtile import bar, hook, layout, qtile, widget
@@ -108,13 +108,16 @@ def autostart():
 
 
 
-@hook.subscribe.focus_change
+# @hook.subscribe.focus_change
 @hook.subscribe.client_new
 def windows_always_in_sight(win:Window|None=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
-    current_group = _qtile.current_group
+    try:
+        current_group = _qtile.current_group
+    except AttributeError:
+        return
     floating_windows_out_of_place = list([ w for w in _qtile.cmd_windows() if w.get("floating", False) and w.get("group") != current_group.name])
     for window in floating_windows_out_of_place:
         w_id = window['id']
@@ -126,10 +129,11 @@ def windows_always_in_sight(win:Window|None=None):
                 window_obj.floating = True
             if opacity:=match[0].get("set_opacity"):
                 window_obj.cmd_opacity(opacity)
+            del window_obj
 
 
 @hook.subscribe.client_new
-@hook.subscribe.focus_change
+# @hook.subscribe.focus_change
 def float_always_on_top(_window:Window|None=None):
     if qtile is None:
         return
@@ -139,10 +143,26 @@ def float_always_on_top(_window:Window|None=None):
         return
     if focus_history[-2].floating and focus_history[-1].floating: # fix for continuesly switching floating windows
         return
+    # if is_window_in_list(focus_history[-1]) and is_window_in_list(focus_history[-2]):
+    #     return
+    always_in_sight = list()
     for window in _qtile.current_group.windows:
         window:Window = window #type: ignore
         if window.floating:
             window.cmd_bring_to_front()
+            if is_window_in_list(window):
+                always_in_sight.append(window)
+    for window in always_in_sight:
+        window.cmd_bring_to_front()
+    
+
+@lazy.function
+def always_on_top_lazy(*args):
+    float_always_on_top()
+
+@lazy.function
+def windows_always_in_sight_lazy(*args):
+    windows_always_in_sight()
 
 
 @hook.subscribe.client_new
@@ -219,7 +239,7 @@ keys = [
     Key([mod, "shift"], "r", lazy.spawn("rofi -show drun -modi drun"),
         desc="launch rofi"),
     Key([], 'Print', lazy.spawn("flameshot gui"), desc="make screenshot"),
-    Key([mod,], "m", lazy.spawn('sflock -b "[o-o]" -c "#"'), desc="lock the screen"),
+    # Key([mod,], "m", lazy.spawn('sflock -b "[o-o]" -c "#"'), desc="lock the screen"),
     
     Key([mod, "shift"], "f", lazy.window.toggle_fullscreen(), desc="toggle fullscreen for focused window"),
     Key([mod], "f", bar_toggle_visibility(), desc="toggle bar's visibility"),
@@ -243,11 +263,11 @@ groups = [Group(i) for i in "12345"]
 for i in groups:
     keys.extend([
         # mod1 + letter of group = switch to group
-        Key([mod], i.name, lazy.group[i.name].toscreen(toggle=False),
+        Key([mod], i.name, lazy.group[i.name].toscreen(toggle=False), windows_always_in_sight_lazy(),
             desc="Switch to group {}".format(i.name)),
 
         # mod1 + shift + letter of group = switch to & move focused window to group
-        Key([mod, "shift"], i.name, lazy.window.togroup(i.name, switch_group=True),
+        Key([mod, "shift"], i.name, lazy.window.togroup(i.name, switch_group=True), windows_always_in_sight_lazy(),
             desc="Switch to & move focused window to group {}".format(i.name)),
         # Or, use below if you prefer not to switch to that group.
         # # mod1 + shift + letter of group = move focused window to group
@@ -259,8 +279,8 @@ for i in groups:
 default_for_layouts=dict(
     margin = 0,
     border_width = 2,
-    border_normal = "#89b4fa",
-    border_focus = "#89dceb",
+    border_normal = "#11111b",
+    border_focus = "#b4befe",
 )
 
 layouts = [
@@ -373,12 +393,12 @@ screens = [
 
 # Drag floating layouts.
 mouse = [
-    Drag([mod], "Button1", lazy.window.set_position_floating(),
+    Drag([mod], "Button1", lazy.window.set_position_floating(), always_on_top_lazy(),
          start=lazy.window.get_position()),
     Drag([mod], "Button3", lazy.window.set_size_floating(),
         start=lazy.window.get_size()),
     Click([mod], "Button2", lazy.window.bring_to_front()),
-    Click([mod, "shift"], "Button1", lazy.window.toggle_floating())
+    Click([mod, "shift"], "Button1",lazy.window.toggle_floating(), always_on_top_lazy())
 ]
 
 
@@ -392,9 +412,9 @@ groups.append(
 )
 
 keys.extend([
-    Key([mod], "t", lazy.group['T'].toscreen(toggle=False),
+    Key([mod], "t", lazy.group['T'].toscreen(toggle=False), windows_always_in_sight_lazy(),
         desc="Switch to group {}".format("T")),
-    Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True),
+    Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True), windows_always_in_sight_lazy(),
         desc="Switch to & move focused window to group {}".format("T")),
 ])
 
