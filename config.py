@@ -284,7 +284,6 @@ default_for_layouts=dict(
 )
 
 layouts = [
-    layout.Columns(border_focus_stack='#d75f5f', **default_for_layouts),
     layout.Max(),
     # Try more layouts by unleashing below layouts.
     # layout.Stack(num_stacks=2),
@@ -298,6 +297,7 @@ layouts = [
         border_on_single=False,
         **default_for_layouts
     ),
+    layout.Columns(border_focus_stack='#d75f5f', **default_for_layouts),
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
