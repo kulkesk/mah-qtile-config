@@ -263,11 +263,11 @@ groups = [Group(i) for i in "12345"]
 for i in groups:
     keys.extend([
         # mod1 + letter of group = switch to group
-        Key([mod], i.name, lazy.group[i.name].toscreen(toggle=False), windows_always_in_sight_lazy(),
+        Key([mod], i.name, lazy.group[i.name].toscreen(toggle=False), windows_always_in_sight_lazy(), always_on_top_lazy(),
             desc="Switch to group {}".format(i.name)),
 
         # mod1 + shift + letter of group = switch to & move focused window to group
-        Key([mod, "shift"], i.name, lazy.window.togroup(i.name, switch_group=True), windows_always_in_sight_lazy(),
+        Key([mod, "shift"], i.name, lazy.window.togroup(i.name, switch_group=True), windows_always_in_sight_lazy(), always_on_top_lazy(),
             desc="Switch to & move focused window to group {}".format(i.name)),
         # Or, use below if you prefer not to switch to that group.
         # # mod1 + shift + letter of group = move focused window to group
@@ -412,9 +412,9 @@ groups.append(
 )
 
 keys.extend([
-    Key([mod], "t", lazy.group['T'].toscreen(toggle=False), windows_always_in_sight_lazy(),
+    Key([mod], "t", lazy.group['T'].toscreen(toggle=False), windows_always_in_sight_lazy(), always_on_top_lazy(),
         desc="Switch to group {}".format("T")),
-    Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True), windows_always_in_sight_lazy(),
+    Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True), windows_always_in_sight_lazy(), always_on_top_lazy(),
         desc="Switch to & move focused window to group {}".format("T")),
 ])
 
