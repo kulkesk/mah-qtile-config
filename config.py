@@ -40,6 +40,7 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 from libqtile.log_utils import logger
 from libqtile.backend.base import Window
+from async_keyboard_widget import KeyboardLayoutAsync
 
 from hideble_bar import HidebleGap
 
@@ -375,6 +376,7 @@ screens = [
                     func=current_keyboard_layout,
                     fontsize=20,
                     update_interval=0.5
+                KeyboardLayoutAsync(display_map={"ru":"🇷🇺", "us":"🇺🇸"}, fontsize=20),
                 ),
                 widget.PulseVolume(),
                 widget.Clock(
