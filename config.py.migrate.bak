@@ -25,25 +25,29 @@
 # SOFTWARE.
 
 
-import os
 import subprocess
-import sys
 from pathlib import Path
+import os
+import sys
 from textwrap import shorten
-from typing import Callable, List, Optional
+from typing import List, Optional, Callable
 
-from async_keyboard_widget_cython import KeyboardLayoutAsync
-from bindings import keys, mod, terminal
-from graphical_notifications import Notifier
 # from libqtile.command.client import InteractiveCommandClient
 from libqtile import bar, hook, layout, qtile, widget
-from libqtile.log_utils import logger
-from libqtile.backend.base import Window
 # from libqtile.backend import base
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.core.manager import Qtile
 from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
+# from libqtile.log_utils import logger
+from libqtile.backend.base import Window
+from async_keyboard_widget_cython import KeyboardLayoutAsync
+from bindings import (
+    mod,
+    terminal,
+    keys
+)
+
 
 # from hideble_bar import HidebleGap
 
@@ -60,12 +64,7 @@ list_always_in_sight = [
         "name": "PureRef",
         "wm_class": ["PureRef", "PureRef"],
         "set_opacity": 1,
-    },
-    {
-        "name": "KeePassXC -  Access Request",
-        "wm_class": ["keepassxc", "KeePassXC"],
-        "set_opacity": 1,
-    },
+    }
 ]
 
 if os.environ.get("QTILE_XEPHYR"):
@@ -74,12 +73,12 @@ else:
     XEPHYR = False
 
 
-def is_window_in_list(window: Optional[dict | Window]):
+def is_window_in_list(window:Optional[dict|Window]):
     if window is None:
         return
-    if isinstance(window, dict):
+    if isinstance(window,dict):
         name = window.get("name")
-        wm_class = window.get("wm_class")  # type: ignore
+        wm_class = window.get("wm_class") #type: ignore
     else:
         name = window.name
         wm_class = window.get_wm_class()
@@ -91,9 +90,7 @@ def is_window_in_list(window: Optional[dict | Window]):
 
     return list(filter(_filter, list_always_in_sight))
 
-
 if not XEPHYR:
-
     @hook.subscribe.startup_once
     def autostart():
         # from subprocess import Popen
@@ -106,10 +103,8 @@ if not XEPHYR:
 
 
 # @hook.subscribe.focus_change
-# @hook.subscribe.client_new
-@hook.subscribe.client_managed
-def windows_always_in_sight(win: Window | None = None):
-    # return
+@hook.subscribe.client_new
+def windows_always_in_sight(win:Window|None=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
@@ -117,75 +112,52 @@ def windows_always_in_sight(win: Window | None = None):
         current_group = _qtile.current_group
     except AttributeError:
         return
-    floating_windows_out_of_place = list(
-        [
-            w
-            for w in _qtile.windows()
-            if w.get("floating", False) and w.get("group") != current_group.name
-        ]
-    )
+    floating_windows_out_of_place = list([ w for w in _qtile.cmd_windows() if w.get("floating", False) and w.get("group") != current_group.name])
     for window in floating_windows_out_of_place:
-        w_id = window["id"]
-        window_obj: Window = _qtile.windows_map[w_id]  # type: ignore
+        w_id = window['id']
+        window_obj:Window = _qtile.windows_map[w_id] # type: ignore
         if match := is_window_in_list(window):
             window_obj.togroup(current_group.name)
-            current_group.prev_window()
+            current_group.cmd_prev_window()
             if not window_obj.floating:
                 window_obj.floating = True
-            if opacity := match[0].get("set_opacity"):
-                window_obj.set_opacity(opacity)
+            if opacity:=match[0].get("set_opacity"):
+                window_obj.cmd_opacity(opacity)
             del window_obj
-    if win is None:
-        return
-    # logger.warning(f"{win.name=}")
-    if "KeePassXC" in win.name:
-        logger.warn("we got in here!")
-        win.bring_to_front()
-        win.bring_to_front()
-        win.bring_to_front()
-
 
 
 @hook.subscribe.client_managed
 # @hook.subscribe.focus_change
-def float_always_on_top(_window: Window | None = None):
-    return
+def float_always_on_top(_window:Window|None=None):
     if qtile is None:
         return
     _qtile: Qtile = qtile
     focus_history: list[Window] = _qtile.current_group.focus_history
     if len(focus_history) <= 1:
         return
-    if (
-        focus_history[-2].floating and focus_history[-1].floating
-    ):  # fix for continuesly switching floating windows
+    if focus_history[-2].floating and focus_history[-1].floating: # fix for continuesly switching floating windows
         return
     # if is_window_in_list(focus_history[-1]) and is_window_in_list(focus_history[-2]):
     #     return
     always_in_sight = list()
     for window in _qtile.current_group.windows:
-        window: Window = window  # type: ignore
+        window:Window = window #type: ignore
         if window.floating:
-            window.bring_to_front()
+            window.cmd_bring_to_front()
             if is_window_in_list(window):
                 always_in_sight.append(window)
     for window in always_in_sight:
-        window.bring_to_front()
-    if _window is None:
-        return
-    # logger.warning(f"{_win.name=}")
-    if "KeePassXC" in _window.get_wm_class():
-        _window.bring_to_front()
+        window.cmd_bring_to_front()
 
 
 @lazy.function
 def always_on_top_lazy(*args):
     float_always_on_top()
 
-
 @lazy.function
 def windows_always_in_sight_lazy(*args):
     windows_always_in_sight()
+
 
 
 groups = []
@@ -194,61 +166,38 @@ groups.extend([Group(i) for i in "12345"])
 
 
 for i in groups:
-    keys.extend(
-        [
-            # mod1 + letter of group = switch to group
-            Key(
-                [mod],
-                i.name,
-                lazy.group[i.name].toscreen(toggle=False),
-                windows_always_in_sight_lazy(),
-                # always_on_top_lazy(),
-                desc="Switch to group {}".format(i.name),
-            ),
-            # mod1 + shift + letter of group = switch to & move focused window to group
-            Key(
-                [mod, "shift"],
-                i.name,
-                lazy.window.togroup(i.name, switch_group=True),
-                windows_always_in_sight_lazy(),
-                # always_on_top_lazy(),
-                desc="Switch to & move focused window to group {}".format(i.name),
-            ),
-            # Or, use below if you prefer not to switch to that group.
-            # # mod1 + shift + letter of group = move focused window to group
-            # Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
-            #     desc="move focused window to group {}".format(i.name)),
-        ]
-    )
+    keys.extend([
+        # mod1 + letter of group = switch to group
+        Key([mod], i.name, lazy.group[i.name].toscreen(toggle=False), windows_always_in_sight_lazy(), always_on_top_lazy(),
+            desc="Switch to group {}".format(i.name)),
+
+        # mod1 + shift + letter of group = switch to & move focused window to group
+        Key([mod, "shift"], i.name, lazy.window.togroup(i.name, switch_group=True), windows_always_in_sight_lazy(), always_on_top_lazy(),
+            desc="Switch to & move focused window to group {}".format(i.name)),
+        # Or, use below if you prefer not to switch to that group.
+        # # mod1 + shift + letter of group = move focused window to group
+        # Key([mod, "shift"], i.name, lazy.window.togroup(i.name),
+        #     desc="move focused window to group {}".format(i.name)),
+    ])
 
 
-from libqtile.config import DropDown, ScratchPad
-
+from libqtile.config import ScratchPad, DropDown
 groups.append(
-    ScratchPad(
-        "scratchpad",
-        [
-            DropDown(
-                "term", "alacritty -e python", on_focus_lost_hide=False, opacity=0.95
-            ),  # type:ignore
-        ],
+    ScratchPad("scratchpad", [
+        DropDown("term", "alacritty -e python", on_focus_lost_hide=False, opacity=.95), #type:ignore
+        ]
     )
 )
 keys.append(
-    Key(
-        [mod],
-        "F3",
-        lazy.group["scratchpad"].dropdown_toggle("term"),
-        desc="stuff and then some",
-    )
+    Key([mod], "F3", lazy.group["scratchpad"].dropdown_toggle("term"), desc="stuff and then some" )
 )
 
 
-default_for_layouts = dict(
-    margin=0,
-    border_width=2,
-    border_normal="#11111b",
-    border_focus="#b4befe",
+default_for_layouts=dict(
+    margin = 0,
+    border_width = 2,
+    border_normal = "#11111b",
+    border_focus = "#b4befe",
 )
 
 layouts = [
@@ -260,8 +209,12 @@ layouts = [
     # layout.MonadTall(),
     # layout.MonadWide(),
     # layout.RatioTile(margin=0),
-    layout.Tile(add_on_top=False, border_on_single=False, **default_for_layouts),
-    layout.Columns(border_focus_stack="#d75f5f", **default_for_layouts),
+    layout.Tile(
+        add_on_top=False,
+        border_on_single=False,
+        **default_for_layouts
+    ),
+    layout.Columns(border_focus_stack='#d75f5f', **default_for_layouts),
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
@@ -271,14 +224,13 @@ layouts = [
 widget_defaults = dict(
     foreground="#cdd6f4",
     background="#181825",
-    font="FiraCode Nerd Font Mono",
+    font='FiraCode Nerd Font Mono',
     fontsize=12,
     padding=3,
 )
 extension_defaults = widget_defaults.copy()
 
-
-def tasklist_shortener(text: str):
+def tasklist_shortener(text:str):
     chop_list = {
         " Mozilla Firefox": "Firefox",
         "- Chromium": "Chromium",
@@ -296,9 +248,8 @@ screens = [
         # top=HidebleGap(24),
         bottom=bar.Bar(
             [
-                widget.CurrentLayoutIcon(scale=0.69),  # noice
-                widget.GroupBox(
-                    disable_drag=True,
+                widget.CurrentLayoutIcon(scale=0.69), # noice
+                widget.GroupBox(disable_drag=True,
                     # mouse_callbacks={
                     #     "Button1": [windows_always_in_sight_lazy(),
                     #     "Button4": windows_always_in_sight_lazy(),
@@ -325,10 +276,9 @@ screens = [
                 # ),
                 widget.Mpris2(
                     width=500,
-                    # {xesam:title} - {xesam:album} - {xesam:artist}
-                    # display_metadata=["xesam:artist", "xesam:title", "xesam:album"],
-                    paused_text=" │ {xesam:artist} - {xesam:title} │",
-                    playing_text=" │ {xesam:artist} - {xesam:title} │",
+                    display_metadata=['xesam:artist', 'xesam:title', 'xesam:album'],
+                    paused_text=" │ {track} │",
+                    playing_text=" │ {track} │",
                     scroll=True,
                     # max_chars=60,
                     scroll_chars=5,
@@ -338,30 +288,34 @@ screens = [
                 widget.ThermalSensor(
                     padding=0,
                     tag_sensor="Package id 0",
-                    format="CPU:{temp:>02.1f}{unit} ",
-                    foreground_alert=widget_defaults.get("foreground", "#ffffff"),
+                    format='CPU:{temp:>02.1f}{unit} ',
+                    foreground_alert=widget_defaults.get("foreground", "#ffffff")
                 ),
                 widget.CPU(
                     # format='{freq_current:>03.1f}GHz {load_percent:>04.1f}%'
-                    format="{load_percent:>04.1f}%",
-                    padding=0,
+                    format='{load_percent:>04.1f}%',
+                    padding=0
                 ),
                 widget.Sep(),
                 widget.ThermalSensor(
                     padding=0,
                     tag_sensor="edge",
-                    format="GPU:{temp:>02.1f}{unit}",
-                    foreground_alert=widget_defaults.get("foreground", "#ffffff"),
+                    format='GPU:{temp:>02.1f}{unit}',
+                    foreground_alert=widget_defaults.get("foreground", "#ffffff")
                 ),
                 widget.Sep(),
                 widget.Memory(
                     padding=0,
-                    format="RAM: {MemPercent:>04.1f}%│Swap: {SwapPercent:>04.1f}%",
+                    format="RAM: {MemPercent:>04.1f}%│Swap: {SwapPercent:>04.1f}%"
                 ),
                 widget.Sep(),
                 widget.Systray(),
+                # KeyboardLayoutAsync(display_map={"ru":"🇷🇺", "us":"🇺🇸"}, fontsize=20),
                 widget.Sep(),
-                widget.PulseVolume(padding=0, fmt="{}"),
+                widget.PulseVolume(
+                    padding=0,
+                    fmt="{}"
+                ),
                 widget.Sep(),
                 widget.Clock(
                     padding=10,
@@ -372,31 +326,22 @@ screens = [
             ],
             27,
             background=["#1e1e2e"],
-            opacity=1,
+            opacity=1
         ),
-        wallpaper=str(WORKING_PATH / "wallpaper.jpg"),
-        wallpaper_mode="stretch",
+    wallpaper=str(WORKING_PATH / "untitled.png"),
+    wallpaper_mode="stretch"
     ),
 ]
 # screens[0].bottom
 
 # Drag floating layouts.
 mouse = [
-    Drag(
-        [mod],
-        "Button1",
-        lazy.window.set_position_floating(),
-        # always_on_top_lazy(),
-        start=lazy.window.get_position(),
-    ),
-    Drag(
-        [mod], "Button3", lazy.window.set_size_floating(), start=lazy.window.get_size()
-    ),
+    Drag([mod], "Button1", lazy.window.set_position_floating(), always_on_top_lazy(),
+         start=lazy.window.get_position()),
+    Drag([mod], "Button3", lazy.window.set_size_floating(),
+        start=lazy.window.get_size()),
     Click([mod], "Button2", lazy.window.bring_to_front()),
-    Click(
-        [mod, "shift"], "Button1", lazy.window.toggle_floating(),
-        # always_on_top_lazy()
-    ),
+    Click([mod, "shift"], "Button1",lazy.window.toggle_floating(), always_on_top_lazy())
 ]
 
 
@@ -405,87 +350,41 @@ mouse = [
 import os
 
 groups.append(
-    Group(
-        "T",
-        matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],  # type: ignore
-        spawn=os.environ.get("TELEGRAM_EXEC", 'echo "oops"'),
-    )
+    Group("T", matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],  # type: ignore
+         spawn=os.environ.get("TELEGRAM_EXEC",'echo "oops"'))
 )
 
-keys.extend(
-    [
-        Key(
-            [mod],
-            "t",
-            lazy.group["T"].toscreen(toggle=False),
-            windows_always_in_sight_lazy(),
-            # always_on_top_lazy(),
-            desc="Switch to group {}".format("T"),
-        ),
-        Key(
-            [mod, "shift"],
-            "t",
-            lazy.window.togroup("T", switch_group=True),
-            windows_always_in_sight_lazy(),
-            # always_on_top_lazy(),
-            desc="Switch to & move focused window to group {}".format("T"),
-        ),
-    ]
-)
-
-
-# TODO: make height and width set programmatically
-HEIGHT = 768
-WIDTH = 1366
-notifier = Notifier(
-    y=10,
-    x=WIDTH - 310,
-    width=300,
-    height=69,
-    format="<b>{summary}</b>\n{body}",
-    border=("#b4befe",) * 3,
-    overflow="more_width",
-    border_width=2,
-    opacity=0.85,
-    **widget_defaults,
-)
-
-keys.extend(
-    [
-        Key([mod], "grave", lazy.function(notifier.prev)),
-        Key([mod, "shift"], "grave", lazy.function(notifier.next)),
-        Key([mod, "control"], "grave", lazy.function(notifier.close)),
-    ]
-)
+keys.extend([
+    Key([mod], "t", lazy.group['T'].toscreen(toggle=False), windows_always_in_sight_lazy(), always_on_top_lazy(),
+        desc="Switch to group {}".format("T")),
+    Key([mod, "shift"], 't', lazy.window.togroup("T", switch_group=True), windows_always_in_sight_lazy(), always_on_top_lazy(),
+        desc="Switch to & move focused window to group {}".format("T")),
+])
 
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 follow_mouse_focus = True
 bring_front_click = False
 floats_kept_above = True
-cursor_warp = False  # _KDE_NET_WM_WINDOW_TYPE_APPLET_POPUP
-floating_layout = layout.Floating(
-    float_rules=[
-        # Run the utility of `xprop` to see the wm class and name of an X client.
-        *layout.Floating.default_float_rules,
-        Match(wm_class="confirmreset"),  # gitk
-        Match(wm_class="makebranch"),  # gitk
-        Match(wm_class="maketag"),  # gitk
-        Match(wm_class="ssh-askpass"),  # ssh-askpass
-        Match(wm_class="ibus-ui-emojier-plasma"),  # emoji selector
-        Match(title="branchdialog"),  # gitk
-        Match(title="pinentry"),  # GPG key password entry
-        Match(wm_class="plasmashell"),  # PureRef
-        # _NET_WM_WINDOW_TYPE(ATOM) = _KDE_NET_WM_WINDOW_TYPE_APPLET_POPUP
-    ],
-    **default_for_layouts,
-)
+cursor_warp = False # _KDE_NET_WM_WINDOW_TYPE_APPLET_POPUP
+floating_layout = layout.Floating(float_rules=[
+    # Run the utility of `xprop` to see the wm class and name of an X client.
+    *layout.Floating.default_float_rules,
+    Match(wm_class='confirmreset'),  # gitk
+    Match(wm_class='makebranch'),  # gitk
+    Match(wm_class='maketag'),  # gitk
+    Match(wm_class='ssh-askpass'),  # ssh-askpass
+    Match(wm_class='ibus-ui-emojier-plasma'),  # emoji selector
+    Match(title='branchdialog'),  # gitk
+    Match(title='pinentry'),  # GPG key password entry
+    Match(wm_class="plasmashell"),  # PureRef
+
+    # _NET_WM_WINDOW_TYPE(ATOM) = _KDE_NET_WM_WINDOW_TYPE_APPLET_POPUP
+], **default_for_layouts)
 auto_fullscreen = True
 focus_on_window_activation = "smart"
 reconfigure_screens = True
 
-floats_kept_above = True
-bring_front_click = False
 # If things like steam games want to auto-minimize themselves when losing
 # focus, should we respect this or not?
 auto_minimize = False

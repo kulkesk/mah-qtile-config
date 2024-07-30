@@ -1,0 +1,5 @@
+qtile
+psutil
+dbus-next
+pulsectl_asyncio
+catppuccin

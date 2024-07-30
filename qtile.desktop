@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Qtile
+Comment=Qtile Session
+Exec=/home/lost_mind/.pyenv/versions/qtile/bin/qtile start
+Type=Application
+Keywords=wm;tiling
