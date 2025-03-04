@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from async_keyboard_layout import layout_status
 from async_keyboard_widget import KeyboardLayoutAsync
+import re
 
 WORKING_PATH = Path(__file__).expanduser().absolute().parent
 
@@ -131,7 +132,7 @@ for i in groups:
 import os
 
 groups.append(
-    Group("T", matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],  # type: ignore
+    Group("T", matches=[Match(wm_class=re.compile(r"^(Telegram|TelegramDesktop)$"))],  # type: ignore
          spawn=os.environ.get("TELEGRAM_EXEC",'echo "oops"'))
 )
 

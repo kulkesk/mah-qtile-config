@@ -190,8 +190,7 @@ class Notifier(configurable.Configurable):
             self._positions.append(
                 (
                     self.x,
-                    self.y + win * (self.height + 2 *
-                                    self.border_width + self.gap),
+                    self.y + win * (self.height + 2 * self.border_width + self.gap),
                 )
             )
 
@@ -309,6 +308,8 @@ class Notifier(configurable.Configurable):
         if self.border_width:
             popup.set_border(self.border[urgency])
         popup.draw()
+        popup.win.keep_above(True)
+        popup.win.move_to_top()
         if icon:
             popup.horizontal_padding = self.horizontal_padding
 
@@ -319,7 +320,7 @@ class Notifier(configurable.Configurable):
                 timeout = notif.timeout
         elif timeout < 0:
             timeout = self.timeout[urgency]
-        if timeout > 0:
+        elif timeout > 0:
             qtile.call_later(timeout / 1000, self._close,
                              popup, self._current_id)
 

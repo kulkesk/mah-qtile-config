@@ -31,6 +31,7 @@ import sys
 from pathlib import Path
 from textwrap import shorten
 from typing import Callable, List, Optional
+import re
 
 from async_keyboard_widget_cython import KeyboardLayoutAsync
 from bindings import keys, mod, terminal
@@ -327,8 +328,9 @@ screens = [
                     width=500,
                     # {xesam:title} - {xesam:album} - {xesam:artist}
                     # display_metadata=["xesam:artist", "xesam:title", "xesam:album"],
-                    paused_text=" │ {xesam:artist} - {xesam:title} │",
-                    playing_text=" │ {xesam:artist} - {xesam:title} │",
+                    format="<b><i>{xesam:artist} - {xesam:title}</i></b>",
+                    paused_text=" │ {track} │",
+                    playing_text=" │ {track} │",
                     scroll=True,
                     # max_chars=60,
                     scroll_chars=5,
@@ -407,7 +409,7 @@ import os
 groups.append(
     Group(
         "T",
-        matches=[Match(wm_class=["Telegram", "TelegramDesktop"])],  # type: ignore
+        matches=[Match(wm_class=re.compile(r"^(Telegram|TelegramDesktop)$"))],  # type: ignore
         spawn=os.environ.get("TELEGRAM_EXEC", 'echo "oops"'),
     )
 )

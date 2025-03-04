@@ -1,11 +1,14 @@
 import asyncio
 
+
 async def await_and_print(c):
     print(await c)
+
 
 async def for_and_print(c):
     async for i in c:
         print(i)
+
 
 async def get_current_keyboard_state(xkblayout_state_bin:str|None=None) -> int:
     if xkblayout_state_bin is None:
@@ -13,7 +16,7 @@ async def get_current_keyboard_state(xkblayout_state_bin:str|None=None) -> int:
     p = await asyncio.create_subprocess_shell(f"{xkblayout_state_bin} print %c", stdout=asyncio.subprocess.PIPE)
     await p.wait()
     return int((await p.communicate())[0].decode().strip())
-    
+
 
 async def available_keyboard_layouts(xkblayout_state_bin:str|None=None) -> list[str]:
     if xkblayout_state_bin is None:
@@ -21,6 +24,7 @@ async def available_keyboard_layouts(xkblayout_state_bin:str|None=None) -> list[
     p = await asyncio.create_subprocess_shell(f"{xkblayout_state_bin} print %S", stdout=asyncio.subprocess.PIPE)
     await p.wait()
     return (await p.communicate())[0].decode().strip().split("\n")
+
 
 async def layout_status(xkblayout_state_bin:str|None=None, xkblayout_sub_bin:str|None=None, layouts_display={"ru":"🇷🇺", "us":"🇺🇸"}):
     if xkblayout_sub_bin is None:
@@ -40,7 +44,7 @@ async def layout_status(xkblayout_state_bin:str|None=None, xkblayout_sub_bin:str
 
         state = (await p.stdout.readline()).decode().strip()
         if state == '' or p.stdout.at_eof():
-            _ = await p.wait() 
+            _ = await p.wait()
             continue
         else:
             state = int(state)
