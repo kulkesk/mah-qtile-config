@@ -4,9 +4,12 @@ from libqtile.utils import guess_terminal
 from libqtile.core.manager import Qtile
 
 mod = "mod4"
-terminal = guess_terminal("alacritty")
+terminal = guess_terminal("kitty")
 
 # bar_state = 0
+
+# c0301
+# c0116
 
 @lazy.function
 def bar_toggle_visibility(qtile:Qtile):
@@ -40,11 +43,18 @@ keys = [
         desc="Move window down"),
     Key([mod, "shift"], "k", lazy.layout.shuffle_up(), desc="Move window up"),
 
+    # # increase and decrease ratio for `layout.Tile`
+    # Key([mod, "control"], "h", lazy.layout.decrease_ratio(),
+    #     desc="decrease ratio"),
+    # Key([mod, "control"], "l", lazy.layout.increase_ratio(),
+    #     desc="Increase ratio"),
+
+
     # Grow windows. If current window is on the edge of screen and direction
     # will be to screen edge - window would shrink.
-    Key([mod, "control"], "h", lazy.layout.grow_left(),
+    Key([mod, "control"], "h", lazy.layout.grow_left(), lazy.layout.decrease_ratio(),
         desc="Grow window to the left"),
-    Key([mod, "control"], "l", lazy.layout.grow_right(),
+    Key([mod, "control"], "l", lazy.layout.grow_right(), lazy.layout.increase_ratio(),
         desc="Grow window to the right"),
     Key([mod, "control"], "j", lazy.layout.grow_down(),
         desc="Grow window down"),
@@ -57,7 +67,7 @@ keys = [
     # multiple stack panes
     Key([mod, "shift"], "Return", lazy.layout.toggle_split(),
         desc="Toggle between split and unsplit sides of stack"),
-    Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
+    Key([mod], "Return", lazy.spawn(terminal + " -1"), desc="Launch terminal"),
 
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
@@ -90,8 +100,8 @@ keys = [
     # volume control
     Key([mod], "e", lazy.widget["pulsevolume"].increase_vol(), desc="increase volume"),
     Key([mod], "q", lazy.widget["pulsevolume"].decrease_vol(), desc="decrease volume"),
-    Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(), desc="increase volume by one"),
-    Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(), desc="decrease volume by one"),
+    Key([mod, "shift"], "e", lazy.widget["pulsevolume"].increase_vol(1), desc="increase volume by one"),
+    Key([mod, "shift"], "q", lazy.widget["pulsevolume"].decrease_vol(1), desc="decrease volume by one"),
     # Key([mod, "shift"], "q", lazy.widget["pulsevolume"].mute(), desc="mute"),
 
     Key([], "XF86AudioRaiseVolume", lazy.widget["pulsevolume"].increase_vol(0.5), desc="increase volume"),

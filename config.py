@@ -53,8 +53,8 @@ WORKING_PATH = Path(__file__).expanduser().absolute().parent
 
 list_always_in_sight = [
     {
-        "name": "Picture-in-Picture",
-        "wm_class": ["Toolkit", "firefox"],
+        "name": "Картинка в картинке",
+        "wm_class": ["Toolkit", "zen"],
         "set_opacity": 1,
     },
     {
@@ -89,8 +89,13 @@ def is_window_in_list(window: Optional[dict | Window]):
         comp_name = _dict.get("name", "")
         comp_class = _dict.get("wm_class", [])
         return name == comp_name or wm_class == comp_class
-
-    return list(filter(_filter, list_always_in_sight))
+    result = list(filter(_filter, list_always_in_sight))
+    # if hasattr(window, "get_wm_window_role"):
+    #     if window.get_wm_window_role() == "PictureInPicture":
+    #         result.append({
+    #             "set_opacity": 1
+    #         })
+    return result
 
 
 if not XEPHYR:
@@ -246,10 +251,10 @@ keys.append(
 
 
 default_for_layouts = dict(
-    margin=0,
+    margin=2,
     border_width=2,
     border_normal="#11111b",
-    border_focus="#b4befe",
+    border_focus="#a6e3a1",
 )
 
 layouts = [
@@ -273,7 +278,7 @@ widget_defaults = dict(
     foreground="#cdd6f4",
     background="#181825",
     font="FiraCode Nerd Font Mono",
-    fontsize=12,
+    fontsize=18,
     padding=3,
 )
 extension_defaults = widget_defaults.copy()
@@ -297,7 +302,7 @@ screens = [
         # top=HidebleGap(24),
         bottom=bar.Bar(
             [
-                widget.CurrentLayoutIcon(scale=0.69),  # noice
+                widget.CurrentLayout(mode='icon', scale=0.69),  # noice
                 widget.GroupBox(
                     disable_drag=True,
                     # mouse_callbacks={
@@ -325,7 +330,7 @@ screens = [
                 #     parse_text=tasklist_shortener,
                 # ),
                 widget.Mpris2(
-                    width=500,
+                    width=1500,
                     # {xesam:title} - {xesam:album} - {xesam:artist}
                     # display_metadata=["xesam:artist", "xesam:title", "xesam:album"],
                     format="<b><i>{xesam:artist} - {xesam:title}</i></b>",
@@ -339,7 +344,7 @@ screens = [
                 widget.Sep(),
                 widget.ThermalSensor(
                     padding=0,
-                    tag_sensor="Package id 0",
+                    tag_sensor="AMD TSI Addr 98h",
                     format="CPU:{temp:>02.1f}{unit} ",
                     foreground_alert=widget_defaults.get("foreground", "#ffffff"),
                 ),
@@ -372,7 +377,7 @@ screens = [
                 # widget.QuickExit(),
                 # widget.Spacer(length=5)
             ],
-            27,
+            34,
             background=["#1e1e2e"],
             opacity=1,
         ),
@@ -435,10 +440,10 @@ keys.extend(
     ]
 )
 
-
+# 2560x1440
 # TODO: make height and width set programmatically
-HEIGHT = 768
-WIDTH = 1366
+HEIGHT = 1440
+WIDTH = 2560
 notifier = Notifier(
     y=10,
     x=WIDTH - 310,
@@ -449,6 +454,7 @@ notifier = Notifier(
     overflow="more_width",
     border_width=2,
     opacity=0.85,
+    max_windows=5,
     **widget_defaults,
 )
 
@@ -463,7 +469,7 @@ keys.extend(
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
 follow_mouse_focus = True
-bring_front_click = False
+bring_front_click = "floating_only"
 floats_kept_above = True
 cursor_warp = False  # _KDE_NET_WM_WINDOW_TYPE_APPLET_POPUP
 floating_layout = layout.Floating(
@@ -486,7 +492,6 @@ auto_fullscreen = True
 focus_on_window_activation = "smart"
 reconfigure_screens = True
 
-floats_kept_above = True
 bring_front_click = False
 # If things like steam games want to auto-minimize themselves when losing
 # focus, should we respect this or not?
